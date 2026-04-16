@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { generateSiteHTML } from '@/lib/generate-html'
 import { generateCustomContent } from '@/lib/claude-api'
 import { logToGoogleSheet } from '@/lib/google-sheets'
-import { updateContactFields, sendSMS } from '@/lib/ghl-api'
+import { updateContactFields, sendSMS, sendWhatsApp } from '@/lib/ghl-api'
 import { addSite, getSites } from '@/lib/site-store'
 import { notifyNewDemo } from '@/lib/notifications'
 
@@ -240,7 +240,25 @@ export async function POST(request) {
     console.warn('⚠️ GHL WEBHOOK: ENABLE_AUTO_SMS is true but no contactId — SMS skipped')
   }
 
-  // 12. Write demo URL and timestamp back to the GHL contact
+  // 12. Send WhatsApp to lead with demo link (opt-in via ENABLE_AUTO_WHATSAPP=true)
+  let whatsappStatus = 'skipped'
+
+  if (process.env.ENABLE_AUTO_WHATSAPP === 'true' && lead.contactId) {
+    try {
+      const waMessage = `Hey! Check out your personalized demo website: ${siteUrl}`
+      await sendWhatsApp(lead.contactId, waMessage)
+      whatsappStatus = 'success'
+      console.log(`✅ GHL WEBHOOK: WhatsApp sent to contact ${lead.contactId}`)
+    } catch (err) {
+      whatsappStatus = 'failed'
+      console.error(`❌ GHL WEBHOOK: WhatsApp failed for contact ${lead.contactId}:`, err.message)
+    }
+  } else if (process.env.ENABLE_AUTO_WHATSAPP === 'true' && !lead.contactId) {
+    whatsappStatus = 'no-contact-id'
+    console.warn('⚠️ GHL WEBHOOK: ENABLE_AUTO_WHATSAPP is true but no contactId — WhatsApp skipped')
+  }
+
+  // 14. Write demo URL and timestamp back to the GHL contact
   //     Non-fatal: a failed writeback must not hide a successful deployment.
   let ghlUpdateStatus = 'skipped'
 
@@ -264,7 +282,7 @@ export async function POST(request) {
     console.warn('⚠️ GHL WEBHOOK: No contactId in payload — skipping contact field update')
   }
 
-  // 13. Return URL to GHL
+  // 15. Return URL to GHL
   return NextResponse.json(
     {
       success:         true,
@@ -275,6 +293,7 @@ export async function POST(request) {
       companyName:      lead.companyName,
       ghlContactUpdate: ghlUpdateStatus,
       smsStatus,
+      whatsappStatus,
     },
     { status: 200, headers: corsHeaders }
   )

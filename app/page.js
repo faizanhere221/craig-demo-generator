@@ -70,6 +70,12 @@ export default function Home() {
               <span className="text-slate-500 text-sm ml-2">by Optimo</span>
             </div>
           </div>
+          <a
+            href="/admin"
+            className="text-xs text-slate-600 hover:text-slate-400 transition-colors"
+          >
+            Admin
+          </a>
         </div>
       </header>
 

@@ -29,7 +29,7 @@ const http = require('http')
 
 const BASE_URL      = process.env.BASE_URL           || 'http://localhost:3000'
 const WEBHOOK_URL   = `${BASE_URL}/api/ghl-webhook`
-const WEBHOOK_SECRET = process.env.GHL_WEBHOOK_SECRET || ''
+const WEBHOOK_SECRET = process.env.GHL_WEBHOOK_SECRET || 'test123'
 const MOCK_GHL_PORT = 3099    // local mock GHL API server
 const MOCK_GHL_BASE = `http://localhost:${MOCK_GHL_PORT}`
 
