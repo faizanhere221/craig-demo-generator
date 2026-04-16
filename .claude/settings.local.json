@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node --check \"/d/Upwork Work/Craig Lead Scraper/craig-demo-generator/scripts/test-ghl-webhook.js\")",
+      "Bash(node scripts/test-ghl-webhook.js --unit)",
+      "Bash(node scripts/test-ghl-webhook.js --mock)"
+    ]
+  }
+}

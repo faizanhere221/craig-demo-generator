@@ -1,0 +1,30 @@
+# Step 1: Update .gitignore with all necessary exclusions
+@"
+# Dependencies
+node_modules/
+
+# Build output
+.next/
+out/
+
+# Environment files
+.env
+.env.local
+.env*.local
+
+# Vercel
+.vercel
+
+# Debug logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+"@ | Out-File -FilePath .gitignore -Encoding UTF8
+
