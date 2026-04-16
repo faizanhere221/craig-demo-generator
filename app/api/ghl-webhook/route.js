@@ -2,8 +2,9 @@ import { NextResponse } from 'next/server'
 import { generateSiteHTML } from '@/lib/generate-html'
 import { generateCustomContent } from '@/lib/claude-api'
 import { logToGoogleSheet } from '@/lib/google-sheets'
-import { updateContactFields } from '@/lib/ghl-api'
+import { updateContactFields, sendSMS } from '@/lib/ghl-api'
 import { addSite, getSites } from '@/lib/site-store'
+import { notifyNewDemo } from '@/lib/notifications'
 
 // CORS headers — allow GHL's servers to POST here
 const corsHeaders = {
@@ -216,7 +217,30 @@ export async function POST(request) {
 
   console.log('📊 GHL WEBHOOK: Site created and logged:', JSON.stringify(siteData, null, 2))
 
-  // 10. Write demo URL and timestamp back to the GHL contact
+  // 10. Dispatch notifications (email / Slack / Discord / Sheets) — non-blocking
+  notifyNewDemo(siteData).catch(err =>
+    console.error('⚠️ GHL WEBHOOK: notifyNewDemo failed:', err.message)
+  )
+
+  // 11. Send SMS to lead with demo link (opt-in via ENABLE_AUTO_SMS=true)
+  let smsStatus = 'skipped'
+
+  if (process.env.ENABLE_AUTO_SMS === 'true' && lead.contactId) {
+    try {
+      const smsMessage = `Hey! Check out your personalized demo website: ${siteUrl}`
+      await sendSMS(lead.contactId, smsMessage)
+      smsStatus = 'success'
+      console.log(`✅ GHL WEBHOOK: SMS sent to contact ${lead.contactId}`)
+    } catch (err) {
+      smsStatus = 'failed'
+      console.error(`❌ GHL WEBHOOK: SMS failed for contact ${lead.contactId}:`, err.message)
+    }
+  } else if (process.env.ENABLE_AUTO_SMS === 'true' && !lead.contactId) {
+    smsStatus = 'no-contact-id'
+    console.warn('⚠️ GHL WEBHOOK: ENABLE_AUTO_SMS is true but no contactId — SMS skipped')
+  }
+
+  // 12. Write demo URL and timestamp back to the GHL contact
   //     Non-fatal: a failed writeback must not hide a successful deployment.
   let ghlUpdateStatus = 'skipped'
 
@@ -240,7 +264,7 @@ export async function POST(request) {
     console.warn('⚠️ GHL WEBHOOK: No contactId in payload — skipping contact field update')
   }
 
-  // 11. Return URL to GHL
+  // 13. Return URL to GHL
   return NextResponse.json(
     {
       success:         true,
@@ -248,8 +272,9 @@ export async function POST(request) {
       slug,
       trackingId,
       niche,
-      companyName:     lead.companyName,
+      companyName:      lead.companyName,
       ghlContactUpdate: ghlUpdateStatus,
+      smsStatus,
     },
     { status: 200, headers: corsHeaders }
   )
