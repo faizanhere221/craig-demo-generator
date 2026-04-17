@@ -276,7 +276,7 @@ export async function POST(request) {
       console.log(`✅ GHL WEBHOOK: Contact ${lead.contactId} updated — demo_site_url + demo_created_at written`)
     } catch (err) {
       ghlUpdateStatus = 'failed'
-      console.error(`❌ GHL WEBHOOK: Failed to update contact ${lead.contactId}:`, err.message, err.body ?? '')
+      console.error(`❌ GHL WEBHOOK: Failed to update contact ${lead.contactId}:`, err.message, err.body ? JSON.stringify(err.body) : '')
     }
   } else {
     console.warn('⚠️ GHL WEBHOOK: No contactId in payload — skipping contact field update')
