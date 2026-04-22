@@ -20,7 +20,7 @@ export default function Home() {
     { value: 'roofer-lovable', label: 'Roofer / Roofing Contractor (Lovable)' },
     { value: 'painter', label: 'Painter / Painting Contractor' },
     { value: 'builder', label: 'Builder / Construction' },
-    { value: 'renovation', label: 'Home Renovation' },
+    { value: 'renovations', label: 'Home Renovation' },
     { value: 'bathroom-lovable', label: 'Bathroom Renovation (Lovable)' },
     { value: 'landscaper', label: 'Landscaper / Landscaping' },
   ]
