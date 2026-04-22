@@ -5,6 +5,7 @@ import { logToGoogleSheet } from '@/lib/google-sheets'
 import { updateContactFields, sendSMS, sendWhatsApp } from '@/lib/ghl-api'
 import { addSite, getSites } from '@/lib/site-store'
 import { notifyNewDemo } from '@/lib/notifications'
+import { addToQueue, getQueueStats } from '@/lib/queue-store'
 
 // CORS headers — allow GHL's servers to POST here
 const corsHeaders = {
@@ -125,6 +126,31 @@ export async function POST(request) {
 
   console.log(`🏷️  GHL WEBHOOK: niche "${lead.rawNiche}" → "${niche}"`)
   console.log(`📋 GHL WEBHOOK: lead extracted:`, JSON.stringify({ ...lead, niche }, null, 2))
+
+  // 4b. Queue mode — add to queue and return early
+  if (process.env.QUEUE_ENABLED === 'true') {
+    console.log('📬 GHL WEBHOOK: QUEUE_ENABLED=true — adding lead to queue')
+    const queued = await addToQueue({ ...lead, niche })
+
+    if (!queued) {
+      console.error('❌ GHL WEBHOOK: Failed to enqueue lead — falling back to immediate processing')
+      // fall through to immediate processing below
+    } else {
+      const stats = await getQueueStats()
+      console.log(`✅ GHL WEBHOOK: Lead queued as ${queued.id}, position ${queued.position}`)
+      return NextResponse.json(
+        {
+          success:    true,
+          queued:     true,
+          queueId:    queued.id,
+          position:   queued.position,
+          pending:    stats?.pending    ?? queued.position,
+          dailyLeft:  stats?.remainingCapacity ?? null,
+        },
+        { status: 202, headers: corsHeaders }
+      )
+    }
+  }
 
   // 5. Generate tracking ID and slug
   const trackingId = generateTrackingId()

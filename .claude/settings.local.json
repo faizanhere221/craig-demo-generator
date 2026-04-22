@@ -3,7 +3,8 @@
     "allow": [
       "Bash(node --check \"/d/Upwork Work/Craig Lead Scraper/craig-demo-generator/scripts/test-ghl-webhook.js\")",
       "Bash(node scripts/test-ghl-webhook.js --unit)",
-      "Bash(node scripts/test-ghl-webhook.js --mock)"
+      "Bash(node scripts/test-ghl-webhook.js --mock)",
+      "Bash(node --env-file=.env.local scripts/test-whatsapp.js P4jBKUWz5tsDIog9gwYF)"
     ]
   }
 }
